@@ -185,8 +185,9 @@ const App = () => {
 					>
 						<option value="none">None</option>
 						<option value="comedy">Comedy</option>
-						<option value="politics">Politics</option>
+						<option value="offensive">Offensive</option>
 						<option value="music">Music</option>
+						<option value="politics">Politics</option>
 					</select>
 					<br />
 				</div>
