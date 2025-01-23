@@ -4,16 +4,22 @@ const App = () => {
 	const [phrase, setPhrase] = useState("");
 	const [score, setScore] = useState(null);
 	const [targetScore, setTargetScore] = useState("");
-	const [selectedTheme, setSelectedTheme] = useState("none");
 	const [generatedPhrases, setGeneratedPhrases] = useState([]);
-	const [refreshKey, setRefreshKey] = useState(0); // New state to force re-generation of phrases
+	const [refreshKey, setRefreshKey] = useState(0);
+	const [isLoading, setIsLoading] = useState(false);
+	const [submittedPhrase, setSubmittedPhrase] = useState("");
 
-	const apiUrl = process.env.REACT_APP_API_URL; // this might change if the environment variable changes
+	const apiUrl = process.env.REACT_APP_API_URL;
 
 	const calculateScore = async () => {
-		// Reset generated phrases and score when recalculating
+		if (!phrase.trim()) {
+			// Prevent submission of empty or whitespace-only phrases
+			showAlert("You must enter some text");
+			return;
+		}
 		setGeneratedPhrases([]);
 		setScore(null);
+		setIsLoading(true);
 
 		try {
 			const response = await fetch(`${apiUrl}/calculate`, {
@@ -30,25 +36,47 @@ const App = () => {
 
 			const data = await response.json();
 			setScore(data.score);
-
-			// Set the calculated score and trigger a re-run for phrase generation
 			setTargetScore(data.score.toString());
-
-			// Force refresh key change to trigger phrase generation
+			setSubmittedPhrase(phrase);
 			setRefreshKey((prevKey) => prevKey + 1);
 		} catch (error) {
 			console.error("Error calculating score:", error);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
-	// Wrap the generatePhrases function with useCallback and include apiUrl in the dependency array
+	const showAlert = (message) => {
+		const alertBox = document.createElement("div");
+		alertBox.textContent = message;
+		alertBox.style.position = "fixed";
+		alertBox.style.top = "10px";
+		alertBox.style.left = "50%";
+		alertBox.style.transform = "translateX(-50%)";
+		alertBox.style.backgroundColor = "#cf4444";
+		alertBox.style.color = "#fff";
+		alertBox.style.padding = "10px 20px";
+		alertBox.style.borderRadius = "8px";
+		alertBox.style.fontFamily = "'Poppins', Arial, sans-serif";
+		alertBox.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
+		alertBox.style.zIndex = 1000;
+		alertBox.style.animation = "fadeOut 2s forwards";
+
+		document.body.appendChild(alertBox);
+
+		// Remove the alert after the animation
+		setTimeout(() => {
+			document.body.removeChild(alertBox);
+		}, 2000);
+	};
+
 	const generatePhrases = useCallback(async () => {
 		if (!targetScore || isNaN(targetScore)) {
 			alert("Please enter a valid number for the target score.");
 			return;
 		}
 
-		setGeneratedPhrases([]); // Reset generated phrases before generating new ones
+		setGeneratedPhrases([]);
 
 		try {
 			const response = await fetch(`${apiUrl}/generate-stream`, {
@@ -58,7 +86,7 @@ const App = () => {
 				},
 				body: JSON.stringify({
 					score: targetScore,
-					theme: selectedTheme === "none" ? null : selectedTheme,
+					theme: "offensive",
 				}),
 			});
 
@@ -83,9 +111,13 @@ const App = () => {
 					if (line.trim() === "") continue;
 					try {
 						const phrase = JSON.parse(line).phrase;
+						const filteredPhrase = phrase
+							.split(" ")
+							.filter((word) => word.length > 2)
+							.join(" ");
 						setGeneratedPhrases((prevPhrases) => [
 							...prevPhrases,
-							phrase,
+							filteredPhrase,
 						]);
 					} catch (error) {
 						console.error("Error parsing JSON:", error);
@@ -95,14 +127,13 @@ const App = () => {
 		} catch (error) {
 			console.error("Error generating phrases:", error);
 		}
-	}, [targetScore, selectedTheme, apiUrl]); // Include apiUrl in the dependency array
+	}, [targetScore, apiUrl]);
 
-	// Automatically generate phrases when refreshKey changes (forced rerun)
 	useEffect(() => {
 		if (targetScore && !isNaN(targetScore)) {
 			generatePhrases();
 		}
-	}, [refreshKey, generatePhrases]); // Trigger re-generation every time refreshKey changes
+	}, [refreshKey, generatePhrases, targetScore]);
 
 	useEffect(() => {
 		if (generatedPhrases.length > 0) {
@@ -110,11 +141,18 @@ const App = () => {
 		}
 	}, [generatedPhrases]);
 
-	// Event handler to trigger button click on Enter key press
+	const handleClear = () => {
+		setPhrase("");
+		setScore(null);
+		setTargetScore("");
+		setGeneratedPhrases([]);
+		setSubmittedPhrase("");
+	};
+
 	const handleKeyPress = (event, buttonClickHandler) => {
 		if (event.key === "Enter") {
 			event.preventDefault();
-			buttonClickHandler(); // Trigger button click handler
+			buttonClickHandler();
 		}
 	};
 
@@ -122,189 +160,145 @@ const App = () => {
 		<main
 			style={{
 				padding: "20px",
-				fontFamily: "Arial, sans-serif",
-				maxWidth: "600px",
+				fontFamily: "'Poppins', Arial, sans-serif",
+				maxWidth: "400px",
 				margin: "0 auto",
 			}}
 		>
-			<h1 style={{ textAlign: "center" }}>Simple Gematria Calculator</h1>
+			<h1 style={{ textAlign: "center" }}>Unreal Numbers</h1>
 
 			<section>
-				<h2>Calculate Gematria Score</h2>
 				<div>
-					<label htmlFor="phrase" style={{ fontSize: "1.2rem" }}>
-						Enter a phrase:
-					</label>
-					<br />
-					<span
-						id="phrase-helper"
-						style={{
-							fontSize: "0.9rem",
-							color: "#777",
-							fontStyle: "italic",
-						}}
-					>
-						Use English words to calculate the Gematria score.
-					</span>
-
-					<span>
-						<input
-							id="phrase"
-							type="text"
-							value={phrase}
-							onChange={(e) => setPhrase(e.target.value)}
-							placeholder="Enter a phrase"
-							aria-describedby="phrase-helper"
-							aria-required="true"
-							style={{
-								width: "97%",
-								padding: "8px",
-								marginBottom: "12px",
-								borderRadius: "4px",
-								border: "1px solid #ccc",
-							}}
-							// Add key press event listener to trigger button click on Enter key
-							onKeyDown={(e) => handleKeyPress(e, calculateScore)}
-						/>
-					</span>
-				</div>
-				<div>
-					<label htmlFor="theme">Choose a topic:</label>
-					<select
-						id="topic"
-						value={selectedTheme}
-						onChange={(e) => setSelectedTheme(e.target.value)}
-						aria-labelledby="topic"
-						style={{
-							width: "100%",
-							padding: "8px",
-							marginBottom: "12px",
-							borderRadius: "4px",
-							border: "1px solid #ccc",
-						}}
-					>
-						<option value="none">None</option>
-						<option value="comedy">Comedy</option>
-						<option value="offensive">Offensive</option>
-						<option value="music">Music</option>
-						<option value="politics">Politics</option>
-					</select>
-					<br />
-				</div>
-				<button
-					onClick={calculateScore}
-					aria-label="Calculate Gematria Score"
-					style={{
-						width: "100%",
-						padding: "10px",
-						backgroundColor: "#005A8E",
-						color: "white",
-						border: "none",
-						borderRadius: "4px",
-						cursor: "pointer",
-						fontSize: "1.5rem",
-					}}
-				>
-					Calculate score
-				</button>
-				<p
-					role="status"
-					aria-live="polite"
-					style={{
-						fontSize: "1.2rem", // Larger font for visibility
-						fontWeight: "bold", // Additional emphasis
-						color: "#0D47A1", // Accessible dark blue
-						backgroundColor: "#E3F2FD", // Light blue for subtle contrast
-						padding: "10px",
-						borderRadius: "8px",
-						textAlign: "center",
-						border: "1px solid #0D47A1", // Outline for better separation
-					}}
-				>
-					{score !== null
-						? `Gematria Score: ${score}`
-						: "No score calculated yet."}
-				</p>
-			</section>
-			{/* <h2>Generate Phrases by Score</h2>
-			<div>
-				<span>
-					<label htmlFor="targetScore" style={{ fontSize: "1.2rem" }}>
-						Enter a target score:
-					</label>
-					<br />
-					<span
-						id="target-score-helper"
-						style={{
-							fontSize: "0.9rem",
-							color: "#777",
-							fontStyle: "italic",
-						}}
-					>
-						Provide a numerical score to generate phrases matching that
-						value.
-					</span>
 					<input
-						id="targetScore"
-						type="number"
-						value={targetScore}
-						onChange={(e) => setTargetScore(e.target.value)}
-						placeholder="Enter a target score"
-						aria-describedby="target-score-helper"
-						aria-required="true"
+						id="phrase"
+						type="text"
+						value={phrase}
+						onChange={(e) => setPhrase(e.target.value)}
+						placeholder="Enter a phrase to be calculated"
 						style={{
-							width: "97%",
+							fontFamily: "'Poppins', Arial, sans-serif",
+							width: "95%",
 							padding: "8px",
 							marginBottom: "12px",
-							borderRadius: "4px",
-							border: "1px solid #ccc",
+							borderRadius: "8px",
+							border: "1px solid #000",
+							boxShadow: "none",
+							transition: "box-shadow 0.3s ease-in-out",
 						}}
-						// Trigger generatePhrases on Enter key press
-						onKeyDown={(e) => handleKeyPress(e, generatePhrases)}
+						onFocus={(e) =>
+							(e.target.style.boxShadow = "0 0 8px #261173")
+						}
+						onBlur={(e) => (e.target.style.boxShadow = "none")}
+						onKeyDown={(e) => handleKeyPress(e, calculateScore)}
 					/>
-				</span>
-			</div>
-			<button
-				onClick={generatePhrases}
-				aria-label="Generate phrases by score"
-				style={{
-					width: "100%",
-					padding: "10px",
-					backgroundColor: "#4CAF50",
-					color: "white",
-					border: "none",
-					borderRadius: "4px",
-					cursor: "pointer",
-					fontSize: "1.5rem",
-				}}
-			>
-				Generate phrases
-			</button> */}
+				</div>
+				<div
+					style={{
+						display: "flex",
+						justifyContent: "space-between",
+						gap: "10px",
+					}}
+				>
+					<button
+						onClick={calculateScore}
+						style={{
+							fontFamily: "'Poppins', Arial, sans-serif",
+							flex: 1,
+							padding: "10px",
+							backgroundColor: "#34eb77",
+							color: "white",
+							border: "1px solid #000000",
+							borderRadius: "8px",
+							cursor: "pointer",
+							fontSize: "1.5rem",
+							transition: "all 0.1s ease-in-out",
+						}}
+						onMouseEnter={(e) =>
+							(e.target.style.backgroundColor = "#05f75e")
+						}
+						onMouseLeave={(e) =>
+							(e.target.style.backgroundColor = "#34eb77")
+						}
+					>
+						Go
+					</button>
+					<button
+						onClick={handleClear}
+						style={{
+							fontFamily: "'Poppins', Arial, sans-serif",
+							flex: 1,
+							padding: "10px",
+							backgroundColor: "#cf4444",
+							color: "white",
+							border: "1px solid #000000",
+							borderRadius: "8px",
+							cursor: "pointer",
+							fontSize: "1.5rem",
+							transition: "all 0.1s ease-in-out",
+						}}
+						onMouseEnter={(e) =>
+							(e.target.style.backgroundColor = "#000")
+						}
+						onMouseLeave={(e) =>
+							(e.target.style.backgroundColor = "#cf4444")
+						}
+					>
+						Reset
+					</button>
+				</div>
+				{isLoading && <p></p>}
+				{!isLoading && score !== null && (
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "center",
+						}}
+					>
+						<p
+							style={{
+								fontFamily: "'Poppins', Arial, sans-serif",
+								fontSize: "1.2rem",
+								fontWeight: "bolder",
+								color: "#fff",
+								backgroundColor: "rgba(52, 52, 52, 0.3)",
+								border: "1px solid #000000",
+								padding: "10px",
+								borderRadius: "8px",
+								textAlign: "center",
+								animation: "bounceIn 1s ease-in-out",
+							}}
+						>
+							{submittedPhrase && `${submittedPhrase} is ${score}`}
+						</p>
+					</div>
+				)}
+			</section>
+
 			<section>
 				<div
 					id="generatedPhrases"
 					tabIndex="-1"
-					style={{ marginTop: "20px" }}
+					style={{ marginTop: "0px" }}
 				>
-					{generatedPhrases.length > 0 ? (
+					{generatedPhrases.length > 0 && (
 						<div
 							style={{
-								padding: "10px",
-								backgroundColor: "#E8F5E9", // Light green background
-								border: "1px solid #1B5E20", // Dark green border for clear separation
+								padding: "1px",
+								backgroundColor: "rgba(52, 52, 52, 0.3)",
+								border: "1px solid #000000",
 								borderRadius: "8px",
 							}}
 						>
 							<h3
 								style={{
-									fontSize: "1.2rem",
-									color: "#1B5E20", // Dark green for header text
-									marginBottom: "10px",
-									marginTop: "0",
+									color: "#fff",
 									textAlign: "center",
+									textDecorationLine: "Underline",
+									padding: "0",
+									marginBottom: "0",
 								}}
 							>
-								Generated Phrases:
+								Matching phrases:
 							</h3>
 							<ul
 								style={{
@@ -317,12 +311,17 @@ const App = () => {
 									<li
 										key={index}
 										style={{
-											backgroundColor: "#A5D6A7", // Soft green for phrase background
-											color: "#004D40", // Dark teal for text contrast
-											padding: "8px",
+											fontFamily: "'Poppins', Arial, sans-serif",
+											color: "#fff",
+											padding: "2px",
+											textAlign: "center",
 											marginBottom: "6px",
 											borderRadius: "4px",
-											fontSize: "1rem",
+											fontWeight: "lighter",
+											fontSize: "1.1rem",
+											animation: "fadeIn 0.1s ease-in-out",
+											animationDelay: `${index * 0.05}s`,
+											animationFillMode: "both",
 										}}
 									>
 										{phrase}
@@ -330,23 +329,6 @@ const App = () => {
 								))}
 							</ul>
 						</div>
-					) : (
-						<p
-							style={{
-								padding: "10px",
-								backgroundColor: "#E8F5E9", // Light green background for consistency
-								border: "1px solid #1B5E20", // Dark green border
-								borderRadius: "8px",
-								fontWeight: "bold",
-								fontSize: "1.2rem",
-								color: "#004D40", // Dark teal text
-								textAlign: "center",
-							}}
-						>
-							{phrase === "" || score === null
-								? "No phrases have been generated yet."
-								: "No phrases found for the given score."}
-						</p>
 					)}
 				</div>
 			</section>

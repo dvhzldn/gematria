@@ -48,12 +48,7 @@ const calculateGematria = (word) => {
 
 // Generate phrases with theme prioritization
 const generatePhrasesStream = (targetScore, maxWords, res, theme) => {
-	console.log(
-		"Generating phrases for score:",
-		targetScore,
-		"with theme:",
-		theme
-	);
+	console.log("Generating phrases for score:", targetScore);
 
 	res.writeHead(200, {
 		"Content-Type": "application/json",
@@ -65,7 +60,7 @@ const generatePhrasesStream = (targetScore, maxWords, res, theme) => {
 	const usedWords = new Set();
 
 	let phraseCount = 0;
-	const maxPhrases = 25;
+	const maxPhrases = 15;
 
 	const generateUniquePhrase = () => {
 		const phrase = [];
@@ -94,11 +89,10 @@ const generatePhrasesStream = (targetScore, maxWords, res, theme) => {
 	while (phraseCount < maxPhrases && wordPool.length > 0) {
 		const phrase = generateUniquePhrase();
 		if (phrase) {
-			console.log("Generated phrase:", phrase);
+			console.log(phrase);
 			res.write(JSON.stringify({ phrase }) + "\n");
 			phraseCount++;
 		} else {
-			console.log("Retrying phrase generation...");
 		}
 	}
 
