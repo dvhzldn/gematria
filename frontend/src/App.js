@@ -8,6 +8,7 @@ const App = () => {
 	const [refreshKey, setRefreshKey] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
 	const [submittedPhrase, setSubmittedPhrase] = useState("");
+	const [includeOffensive, setIncludeOffensive] = useState(true);
 
 	const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -87,7 +88,7 @@ const App = () => {
 				},
 				body: JSON.stringify({
 					score: targetScore,
-					theme: "offensive",
+					theme: includeOffensive ? "offensive" : null,
 				}),
 			});
 
@@ -128,7 +129,7 @@ const App = () => {
 		} catch (error) {
 			console.error("Error generating phrases:", error);
 		}
-	}, [targetScore, apiUrl]);
+	}, [targetScore, apiUrl, includeOffensive]);
 
 	useEffect(() => {
 		if (targetScore && !isNaN(targetScore)) {
@@ -175,7 +176,7 @@ const App = () => {
 					animation: "bounce 20s infinite",
 				}}
 			>
-				Tom Unreal Numbers
+				Unreal Tom Numbers
 			</h1>
 
 			<style>
@@ -212,6 +213,17 @@ const App = () => {
 						onBlur={(e) => (e.target.style.boxShadow = "none")}
 						onKeyDown={(e) => handleKeyPress(e, calculateScore)}
 					/>
+					<div style={{ marginTop: "10px" }}>
+						<label style={{ fontFamily: "'Poppins', Arial, sans-serif" }}>
+							<input
+								type="checkbox"
+								checked={includeOffensive}
+								onChange={(e) => setIncludeOffensive(e.target.checked)}
+								style={{ marginRight: "8px" }}
+							/>
+							Include offensive words
+						</label>
+					</div>
 				</div>
 				<div
 					style={{
