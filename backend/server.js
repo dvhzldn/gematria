@@ -6,6 +6,7 @@ const path = require("path");
 
 const app = express();
 const PORT = 5006;
+const dictionariesPath = path.join(__dirname, "dictionaries");
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -16,12 +17,8 @@ const loadWords = (filePath) => {
 		.readFileSync(filePath, "utf-8")
 		.split("\n")
 		.map((word) => word.trim().toUpperCase())
-		.filter((word) => /^[A-Z]+$/.test(word)); // Ensure only alphabetic words
+		.filter((word) => /^[A-Z]+$/.test(word));
 };
-
-// Load main dictionary
-const mainDictionaryPath = path.join(__dirname, "oxford_3000.txt");
-const mainDictionary = loadWords(mainDictionaryPath);
 
 // Load theme-specific dictionaries
 const themesDir = path.join(__dirname, "themes");
@@ -47,7 +44,13 @@ const calculateGematria = (word) => {
 };
 
 // Generate phrases with theme prioritization
-const generatePhrasesStream = (targetScore, maxWords, res, theme) => {
+const generatePhrasesStream = (
+	targetScore,
+	maxWords,
+	res,
+	theme,
+	wordListFilePath
+) => {
 	console.log("Generating phrases for score:", targetScore, "\n");
 
 	res.writeHead(200, {
@@ -55,14 +58,17 @@ const generatePhrasesStream = (targetScore, maxWords, res, theme) => {
 		"Transfer-Encoding": "chunked",
 	});
 
+	// Load the selected word list as the main dictionary
+	const mainDictionary = loadWords(wordListFilePath);
+
 	const themeWords = themeDictionaries[theme] || [];
 	const wordPool = [...themeWords, ...mainDictionary];
-	const usedWords = new Set();
-
 	let phraseCount = 0;
 	const maxPhrases = 50;
 
+	// Generate a single unique phrase
 	const generateUniquePhrase = () => {
+		const usedWords = new Set();
 		const phrase = [];
 		let currentScore = 0;
 
@@ -86,29 +92,74 @@ const generatePhrasesStream = (targetScore, maxWords, res, theme) => {
 		return phrase.join(" ");
 	};
 
-	while (phraseCount < maxPhrases && wordPool.length > 0) {
+	// Generate up to `maxPhrases`
+	let attempts = 0;
+	while (phraseCount < maxPhrases && attempts < 500) {
+		// Prevent infinite loops
 		const phrase = generateUniquePhrase();
 		if (phrase) {
-			console.log(phrase, "\n");
+			console.log(phrase);
 			res.write(JSON.stringify({ phrase }) + "\n");
 			phraseCount++;
-		} else {
 		}
+		attempts++;
 	}
 
 	res.end();
 };
 
+// Endpoint to fetch available word list files
+app.get("/word-lists", (req, res) => {
+	try {
+		const files = fs
+			.readdirSync(dictionariesPath)
+			.filter((file) => file.endsWith(".txt"))
+			.map((file) => path.basename(file, ".txt"));
+		res.json({ wordLists: files });
+	} catch (err) {
+		console.error("Error reading dictionaries folder:", err);
+		res.status(500).json({ error: "Could not retrieve word lists." });
+	}
+});
+
 // Endpoint to generate phrases
 app.post("/generate-stream", (req, res) => {
-	const { score, theme } = req.body;
+	const { score, theme, wordList } = req.body;
 
-	if (!score || isNaN(score)) {
-		return res.status(400).json({ error: "Valid score is required" });
+	try {
+		// Validate word list file
+		if (!wordList) {
+			return res.status(400).json({ error: "No word list selected." });
+		}
+
+		const wordListFilePath = path.join(dictionariesPath, `${wordList}.txt`);
+
+		if (!fs.existsSync(wordListFilePath)) {
+			return res
+				.status(404)
+				.json({ error: "Word list file '${wordList}.txt' not found" });
+		}
+
+		if (!score || isNaN(score)) {
+			return res.status(400).json({ error: "Valid score is required" });
+		}
+
+		const selectedTheme = theme && themeDictionaries[theme] ? theme : null;
+
+		generatePhrasesStream(
+			Number(score),
+			6,
+			res,
+			selectedTheme,
+			wordListFilePath
+		);
+	} catch (error) {
+		// Catch unexpected errors and log them
+		console.error("Error in /generate-stream endpoint:", error);
+		res.status(500).json({
+			error: "An unexpected error occurred. Please try again later.",
+		});
 	}
-
-	const selectedTheme = theme && themeDictionaries[theme] ? theme : null;
-	generatePhrasesStream(Number(score), 6, res, selectedTheme);
 });
 
 // Endpoint to calculate score

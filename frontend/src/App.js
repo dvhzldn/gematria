@@ -1,26 +1,62 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 
 const App = () => {
 	const [phrase, setPhrase] = useState("");
 	const [score, setScore] = useState(null);
-	const [targetScore, setTargetScore] = useState("");
 	const [generatedPhrases, setGeneratedPhrases] = useState([]);
-	const [refreshKey, setRefreshKey] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
 	const [submittedPhrase, setSubmittedPhrase] = useState("");
 	const [includeOffensive, setIncludeOffensive] = useState(true);
+	const [wordLists, setWordLists] = useState([]);
+	const [selectedWordList, setSelectedWordList] = useState("oxford_3000");
 
 	const apiUrl = process.env.REACT_APP_API_URL;
+	const hasFetched = useRef(false);
 
-	const calculateScore = async () => {
+	useEffect(() => {
+		if (!hasFetched.current) {
+			const fetchWordLists = async () => {
+				try {
+					const cachedData = localStorage.getItem("wordLists");
+					if (cachedData) {
+						setWordLists(JSON.parse(cachedData));
+						return;
+					}
+					console.log("Fetching word lists...");
+					const response = await fetch(`${apiUrl}/word-lists`);
+					if (!response.ok) {
+						throw new Error(`HTTP error! Status: ${response.status}`);
+					}
+					const data = await response.json();
+					console.log("Received word lists:", data);
+
+					setWordLists(data.wordLists);
+					setSelectedWordList("oxford_3000");
+					localStorage.setItem(
+						"wordLists",
+						JSON.stringify(data.wordLists)
+					);
+				} catch (error) {
+					console.error("Error fetching word lists:", error);
+				}
+			};
+
+			fetchWordLists();
+
+			hasFetched.current = true;
+		}
+	}, [apiUrl]);
+
+	const calculateScore = useCallback(async () => {
 		if (!phrase.trim()) {
-			// Prevent submission of empty or whitespace-only phrases
 			showAlert("Enter some text");
-			return;
+			return null;
 		}
 		setGeneratedPhrases([]);
 		setScore(null);
 		setIsLoading(true);
+
+		console.log("Sending request to calculate score for phrase:", phrase);
 
 		try {
 			const response = await fetch(`${apiUrl}/calculate`, {
@@ -36,14 +72,126 @@ const App = () => {
 			}
 
 			const data = await response.json();
+			console.log("Response data from calculate:", data);
+
 			setScore(data.score);
-			setTargetScore(data.score.toString());
 			setSubmittedPhrase(phrase);
-			setRefreshKey((prevKey) => prevKey + 1);
+			return data.score;
 		} catch (error) {
 			console.error("Error calculating score:", error);
+			return null;
 		} finally {
 			setIsLoading(false);
+		}
+	}, [apiUrl, phrase]);
+
+	const generatePhrases = useCallback(
+		async (score) => {
+			console.log("Starting to generate phrases with score:", score);
+
+			if (!score || isNaN(score)) {
+				showAlert("Invalid score. Please calculate a valid score first.");
+				console.log("Invalid score, exiting.");
+				return;
+			}
+
+			if (!selectedWordList) {
+				showAlert("Select a valid word list.");
+				console.log("No word list selected, exiting.");
+				return;
+			}
+
+			console.log("Sending request to generate phrases with parameters:", {
+				score,
+				theme: includeOffensive ? "offensive" : null,
+				wordList: selectedWordList,
+			});
+
+			try {
+				const response = await fetch(`${apiUrl}/generate-stream`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						score,
+						theme: includeOffensive ? "offensive" : null,
+						wordList: selectedWordList,
+					}),
+				});
+
+				if (!response.ok) {
+					throw new Error(`HTTP error! Status: ${response.status}`);
+				}
+
+				const reader = response.body.getReader();
+				const decoder = new TextDecoder();
+				let buffer = "";
+
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) break;
+
+					buffer += decoder.decode(value, { stream: true });
+
+					const lines = buffer.split("\n");
+					buffer = lines.pop();
+
+					for (const line of lines) {
+						if (line.trim() === "") continue;
+						try {
+							const phrase = JSON.parse(line).phrase;
+							const filteredPhrase = phrase
+								.split(" ")
+								.filter((word) => word.length > 1)
+								.join(" ");
+							setGeneratedPhrases((prevPhrases) => [
+								...prevPhrases,
+								filteredPhrase,
+							]);
+							console.log(filteredPhrase);
+						} catch (error) {
+							console.error("Error parsing JSON:", error);
+						}
+					}
+				}
+			} catch (error) {
+				console.error("Error generating phrases:", error);
+			}
+		},
+		[apiUrl, includeOffensive, selectedWordList]
+	);
+
+	const handleGoClick = async () => {
+		console.log("Go button clicked");
+		const score = await calculateScore();
+		if (score) {
+			console.log("Conditions met, calling generatePhrases...");
+			await generatePhrases(score);
+		} else {
+			console.log("Conditions not met, skipping generatePhrases.");
+		}
+	};
+
+	const handleReset = () => {
+		setPhrase("");
+		setScore(null);
+		setGeneratedPhrases([]);
+		setSubmittedPhrase("");
+	};
+
+	const handleWordListChange = (e) => {
+		setSelectedWordList(e.target.value);
+	};
+
+	const handleOffensiveToggle = () => {
+		setIncludeOffensive((prev) => !prev);
+	};
+
+	const handleKeyPress = (event, buttonClickHandler) => {
+		if (event.key === "Enter") {
+			event.preventDefault();
+			buttonClickHandler();
 		}
 	};
 
@@ -59,6 +207,7 @@ const App = () => {
 		alertBox.style.padding = "10px 20px";
 		alertBox.style.borderRadius = "8px";
 		alertBox.style.textAlign = "center";
+		alertBox.style.fontSize = "3rem";
 		alertBox.style.fontFamily = "'Poppins', Arial, sans-serif";
 		alertBox.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
 		alertBox.style.zIndex = 1000;
@@ -66,96 +215,9 @@ const App = () => {
 
 		document.body.appendChild(alertBox);
 
-		// Remove the alert after the animation
 		setTimeout(() => {
 			document.body.removeChild(alertBox);
 		}, 2000);
-	};
-
-	const generatePhrases = useCallback(async () => {
-		if (!targetScore || isNaN(targetScore)) {
-			alert("Please enter a valid number for the target score.");
-			return;
-		}
-
-		setGeneratedPhrases([]);
-
-		try {
-			const response = await fetch(`${apiUrl}/generate-stream`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					score: targetScore,
-					theme: includeOffensive ? "offensive" : null,
-				}),
-			});
-
-			if (!response.ok) {
-				throw new Error(`HTTP error! Status: ${response.status}`);
-			}
-
-			const reader = response.body.getReader();
-			const decoder = new TextDecoder();
-			let buffer = "";
-
-			while (true) {
-				const { done, value } = await reader.read();
-				if (done) break;
-
-				buffer += decoder.decode(value, { stream: true });
-
-				const lines = buffer.split("\n");
-				buffer = lines.pop();
-
-				for (const line of lines) {
-					if (line.trim() === "") continue;
-					try {
-						const phrase = JSON.parse(line).phrase;
-						const filteredPhrase = phrase
-							.split(" ")
-							.filter((word) => word.length > 0)
-							.join(" ");
-						setGeneratedPhrases((prevPhrases) => [
-							...prevPhrases,
-							filteredPhrase,
-						]);
-					} catch (error) {
-						console.error("Error parsing JSON:", error);
-					}
-				}
-			}
-		} catch (error) {
-			console.error("Error generating phrases:", error);
-		}
-	}, [targetScore, apiUrl, includeOffensive]);
-
-	useEffect(() => {
-		if (targetScore && !isNaN(targetScore)) {
-			generatePhrases();
-		}
-	}, [refreshKey, generatePhrases, targetScore]);
-
-	useEffect(() => {
-		if (generatedPhrases.length > 0) {
-			document.getElementById("generatedPhrases").focus();
-		}
-	}, [generatedPhrases]);
-
-	const handleClear = () => {
-		setPhrase("");
-		setScore(null);
-		setTargetScore("");
-		setGeneratedPhrases([]);
-		setSubmittedPhrase("");
-	};
-
-	const handleKeyPress = (event, buttonClickHandler) => {
-		if (event.key === "Enter") {
-			event.preventDefault();
-			buttonClickHandler();
-		}
 	};
 
 	return (
@@ -213,15 +275,38 @@ const App = () => {
 						onBlur={(e) => (e.target.style.boxShadow = "none")}
 						onKeyDown={(e) => handleKeyPress(e, calculateScore)}
 					/>
+					<div style={{ margin: "10px 0" }}>
+						<label
+							htmlFor="wordListSelect"
+							style={{ marginRight: "10px" }}
+						>
+							Select Word List:
+						</label>
+						<select
+							id="wordListSelect"
+							value={selectedWordList}
+							onChange={handleWordListChange}
+							style={{
+								padding: "5px",
+								fontFamily: "'Poppins', Arial, sans-serif",
+							}}
+						>
+							{wordLists.map((list) => (
+								<option key={list} value={list}>
+									{list}
+								</option>
+							))}
+						</select>
+					</div>
 					<div style={{ marginTop: "10px" }}>
 						<label style={{ fontFamily: "'Poppins', Arial, sans-serif" }}>
+							Include offensive words
 							<input
 								type="checkbox"
 								checked={includeOffensive}
-								onChange={(e) => setIncludeOffensive(e.target.checked)}
+								onChange={handleOffensiveToggle}
 								style={{ marginRight: "8px" }}
 							/>
-							Include offensive words
 						</label>
 					</div>
 				</div>
@@ -233,7 +318,7 @@ const App = () => {
 					}}
 				>
 					<button
-						onClick={calculateScore}
+						onClick={handleGoClick}
 						style={{
 							fontFamily: "'Poppins', Arial, sans-serif",
 							flex: 1,
@@ -256,7 +341,7 @@ const App = () => {
 						Go
 					</button>
 					<button
-						onClick={handleClear}
+						onClick={handleReset}
 						style={{
 							fontFamily: "'Poppins', Arial, sans-serif",
 							flex: 1,
