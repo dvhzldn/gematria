@@ -131,13 +131,11 @@ const App = () => {
 						}));
 						return;
 					}
-					//					console.log("Fetching word lists...");
 					const response = await fetch(`${apiUrl}/word-lists`);
 					if (!response.ok) {
 						throw new Error(`HTTP error! Status: ${response.status}`);
 					}
 					const data = await response.json();
-					//					console.log("Received word lists:", data);
 
 					setState((prevState) => ({
 						...prevState,
@@ -170,11 +168,6 @@ const App = () => {
 			isLoading: true,
 		}));
 
-		// console.log(
-		// 	"Sending request to calculate score for phrase:",
-		// 	state.phrase
-		// );
-
 		try {
 			const response = await fetch(`${apiUrl}/calculate`, {
 				method: "POST",
@@ -189,7 +182,6 @@ const App = () => {
 			}
 
 			const data = await response.json();
-			// console.log("Response data from calculate:", data);
 
 			setState((prevState) => ({
 				...prevState,
@@ -207,25 +199,15 @@ const App = () => {
 
 	const generatePhrases = useCallback(
 		async (score) => {
-			// console.log("Starting to generate phrases with score:", score);
-
 			if (!score || isNaN(score)) {
 				showAlert("Invalid score. Please calculate a valid score first.");
-				// console.log("Invalid score, exiting.");
 				return;
 			}
 
 			if (!state.selectedWordList) {
 				showAlert("Select a valid word list.");
-				// console.log("No word list selected, exiting.");
 				return;
 			}
-
-			// console.log("Sending request to generate phrases with parameters:", {
-			// 	score,
-			// 	theme: state.includeOffensive ? "offensive" : null,
-			// 	wordList: state.selectedWordList,
-			// });
 
 			try {
 				const response = await fetch(`${apiUrl}/generate-stream`, {
@@ -272,7 +254,6 @@ const App = () => {
 									filteredPhrase,
 								],
 							}));
-							// console.log(filteredPhrase);
 						} catch (error) {
 							console.error("Error parsing JSON:", error);
 						}
@@ -286,13 +267,10 @@ const App = () => {
 	);
 
 	const handleGoClick = async () => {
-		// console.log("Go button clicked");
 		const score = await calculateScore();
 		if (score) {
-			// console.log("Conditions met, calling generatePhrases...");
 			await generatePhrases(score);
 		} else {
-			// console.log("Conditions not met, skipping generatePhrases.");
 		}
 	};
 
