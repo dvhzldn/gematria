@@ -5,7 +5,7 @@ body {
 	background-size: cover;
 	background-position: center;
 	background-repeat: no-repeat;
-	animation: zoomInBackground 60s ease-in-out infinite;
+	animation: zoomInBackground 120s ease-in-out infinite;
 	height: 100vh; /* Full viewport height */
 	width: 100vw; /* Full viewport width */
 	overflow: hidden; /* Optional: Hide scrollbars */
@@ -57,7 +57,7 @@ code {
 		background-size: 100% 100%;
 	}
 	50% {
-		background-size: 290% 140%;
+		background-size: 390% 240%;
 	}
 	100% {
 		background-size: 100% 100%;

@@ -171,7 +171,7 @@ const App = () => {
 					textAlign: "center",
 					fontSize: "3rem",
 					fontWeight: "bold",
-					color: "#cf4444",
+					color: "#000",
 					animation: "bounce 20s infinite",
 				}}
 			>
