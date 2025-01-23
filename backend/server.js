@@ -60,7 +60,7 @@ const generatePhrasesStream = (targetScore, maxWords, res, theme) => {
 	const usedWords = new Set();
 
 	let phraseCount = 0;
-	const maxPhrases = 15;
+	const maxPhrases = 10;
 
 	const generateUniquePhrase = () => {
 		const phrase = [];

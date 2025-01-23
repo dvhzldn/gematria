@@ -14,7 +14,7 @@ const App = () => {
 	const calculateScore = async () => {
 		if (!phrase.trim()) {
 			// Prevent submission of empty or whitespace-only phrases
-			showAlert("You must enter some text");
+			showAlert("Enter some text");
 			return;
 		}
 		setGeneratedPhrases([]);
@@ -50,13 +50,14 @@ const App = () => {
 		const alertBox = document.createElement("div");
 		alertBox.textContent = message;
 		alertBox.style.position = "fixed";
-		alertBox.style.top = "10px";
+		alertBox.style.top = "300px";
 		alertBox.style.left = "50%";
 		alertBox.style.transform = "translateX(-50%)";
-		alertBox.style.backgroundColor = "#cf4444";
+		alertBox.style.backgroundColor = "#000";
 		alertBox.style.color = "#fff";
 		alertBox.style.padding = "10px 20px";
 		alertBox.style.borderRadius = "8px";
+		alertBox.style.textAlign = "center";
 		alertBox.style.fontFamily = "'Poppins', Arial, sans-serif";
 		alertBox.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
 		alertBox.style.zIndex = 1000;
@@ -289,17 +290,18 @@ const App = () => {
 								borderRadius: "8px",
 							}}
 						>
-							<h3
+							<h5
 								style={{
 									color: "#fff",
 									textAlign: "center",
 									textDecorationLine: "Underline",
 									padding: "0",
 									marginBottom: "0",
+									marginTop: "2px",
 								}}
 							>
 								Matching phrases:
-							</h3>
+							</h5>
 							<ul
 								style={{
 									listStyleType: "none",
@@ -315,10 +317,9 @@ const App = () => {
 											color: "#fff",
 											padding: "2px",
 											textAlign: "center",
-											marginBottom: "6px",
-											borderRadius: "4px",
+											marginBottom: "2px",
 											fontWeight: "lighter",
-											fontSize: "1.1rem",
+											fontSize: "0.9rem",
 											animation: "fadeIn 0.1s ease-in-out",
 											animationDelay: `${index * 0.05}s`,
 											animationFillMode: "both",
