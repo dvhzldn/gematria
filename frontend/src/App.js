@@ -304,6 +304,8 @@ const App = () => {
 					{generatedPhrases.length > 0 && (
 						<div
 							style={{
+								maxHeight: "50vh",
+								overflowY: "auto",
 								padding: "1px",
 								backgroundColor: "rgba(52, 52, 52, 0.3)",
 								border: "1px solid #000000",
