@@ -3,43 +3,67 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 const commonStyles = {
 	fontFamily: "'Poppins', Arial, sans-serif",
 	borderRadius: "8px",
-	transition: "box-shadow 0.3s ease-in-out",
 };
 
 const containerStyle = {
-	padding: "20px",
+	...commonStyles,
 	maxWidth: "400px",
 	margin: "0 auto",
 };
 
+const buttonContainerStyle = {
+	display: "flex",
+	justifyContent: "space-between",
+	gap: "20px",
+};
+
 const headerStyle = {
+	...commonStyles,
 	textAlign: "center",
-	fontSize: "3rem",
-	fontWeight: "bold",
+	lineHeight: "0.5",
+	fontSize: "2rem",
+	fontWeight: "lighter",
 	color: "#000",
-	animation: "bounce 20s infinite",
+	animation: "bounceIn 1s ease-in-out",
+};
+
+const centeredStyle = {
+	display: "flex",
+	justifyContent: "center",
 };
 
 const inputStyle = {
 	...commonStyles,
-	padding: "8px",
+	padding: "12px",
 	marginBottom: "12px",
 	border: "1px solid #000",
 	width: "95%",
+	fontSize: "1.4rem",
+};
+
+const labelStyle = {
+	textAlign: "left",
+	padding: "0px",
+	fontSize: "1.1rem",
+	color: "#333",
 };
 
 const selectStyle = {
-	padding: "5px",
-	fontFamily: "'Poppins', Arial, sans-serif",
+	...commonStyles,
+	padding: "2px",
+	margin: "5px",
 };
 
-const checkboxLabelStyle = {
-	fontFamily: "'Poppins', Arial, sans-serif",
+const checkboxStyle = {
+	...commonStyles,
+	transform: "scale(2)",
+	marginLeft: "20px",
 };
 
 const buttonBaseStyle = {
 	...commonStyles,
 	flex: 1,
+	marginTop: "10px",
 	padding: "10px",
 	fontSize: "1.5rem",
 	border: "1px solid #000000",
@@ -50,7 +74,6 @@ const buttonBaseStyle = {
 const goButtonStyle = {
 	...buttonBaseStyle,
 	backgroundColor: "#34eb77",
-	color: "white",
 };
 
 const resetButtonStyle = {
@@ -62,44 +85,58 @@ const resetButtonStyle = {
 const scoreBoxStyle = {
 	...commonStyles,
 	fontSize: "1.2rem",
-	fontWeight: "bolder",
-	color: "#fff",
-	backgroundColor: "rgba(52, 52, 52, 0.3)",
+	fontWeight: "bold",
+	color: "#000",
+	backgroundColor: "rgba(13, 199, 255, 0.8)",
 	border: "1px solid #000000",
 	padding: "10px",
-	textAlign: "center",
 	animation: "bounceIn 1s ease-in-out",
 };
 
 const phraseContainerStyle = {
+	...commonStyles,
 	maxHeight: "50vh",
 	overflowY: "auto",
 	padding: "1px",
-	backgroundColor: "rgba(52, 52, 52, 0.3)",
-	border: "1px solid #000000",
+	backgroundColor: "rgba(13, 199, 255, 0.8)",
+	border: "1px solid #000",
 	borderRadius: "8px",
 };
 
-const phraseItemStyle = {
-	fontFamily: "'Poppins', Arial, sans-serif",
-	color: "#fff",
-	padding: "2px",
+const phraseHeadingStyle = {
+	textDecorationLine: "underline",
+	marginTop: "3px",
 	textAlign: "center",
+};
+
+const phraseHelpStyle = {
+	fontSize: "0.8rem",
+	textAlign: "left",
+	color: "#333",
+};
+
+const phraseListStyle = {
+	listStyleType: "none",
+	padding: "0",
+	margin: "0",
+};
+
+const phraseItemStyle = {
+	...commonStyles,
+	textAlign: "left",
+	color: "#000",
 	marginBottom: "2px",
+	marginLeft: "15px",
 	fontWeight: "lighter",
-	fontSize: "0.9rem",
+	fontSize: "1.1rem",
 	animation: "fadeIn 0.1s ease-in-out",
 };
 
 const keyframesStyle = `
-  @keyframes bounce {
-    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-    40% { transform: translateY(-20px); }
-    60% { transform: translateY(-10px); }
-  }
 
   @keyframes bounceIn {
     0% { transform: scale(0.8); opacity: 0; }
+    50% { transform: scale(1.2); opacity: 0.5; }
     100% { transform: scale(1); opacity: 1; }
   }
 `;
@@ -111,7 +148,7 @@ const App = () => {
 		generatedPhrases: [],
 		isLoading: false,
 		submittedPhrase: "",
-		includeOffensive: true,
+		includeOffensive: false,
 		wordLists: [],
 		selectedWordList: "oxford_3000",
 	});
@@ -136,7 +173,6 @@ const App = () => {
 						throw new Error(`HTTP error! Status: ${response.status}`);
 					}
 					const data = await response.json();
-
 					setState((prevState) => ({
 						...prevState,
 						wordLists: data.wordLists,
@@ -182,7 +218,6 @@ const App = () => {
 			}
 
 			const data = await response.json();
-
 			setState((prevState) => ({
 				...prevState,
 				score: data.score,
@@ -270,17 +305,19 @@ const App = () => {
 		const score = await calculateScore();
 		if (score) {
 			await generatePhrases(score);
-		} else {
 		}
 	};
 
 	const handleReset = () => {
-		setState({
+		setState((prevState) => ({
 			phrase: "",
 			score: null,
 			generatedPhrases: [],
 			submittedPhrase: "",
-		});
+			includeOffensive: prevState.includeOffensive,
+			wordLists: prevState.wordLists,
+			selectedWordList: prevState.selectedWordList,
+		}));
 	};
 
 	const handleWordListChange = (e) => {
@@ -331,12 +368,20 @@ const App = () => {
 
 	return (
 		<main style={containerStyle}>
-			<h1 style={headerStyle}>Unreal Tom Numbers</h1>
+			<h1 style={headerStyle}>Simple Gematria</h1>
+			<h1 style={headerStyle}>Phrase Generator</h1>
 
 			<style>{keyframesStyle}</style>
 
 			<section>
 				<div>
+					<label htmlFor="phrase" style={labelStyle}>
+						Phrase:
+					</label>
+					<p id="phraseHelp" style={phraseHelpStyle}>
+						Enter a word or phrase to calculate its score and generate
+						phrases with a matching score. This field is required.
+					</p>
 					<input
 						id="phrase"
 						type="text"
@@ -347,26 +392,26 @@ const App = () => {
 								phrase: e.target.value,
 							}))
 						}
-						placeholder="Enter a word or phrase to be calculated"
+						placeholder="Enter a word or phrase"
 						style={inputStyle}
 						onFocus={(e) =>
 							(e.target.style.boxShadow = "0 0 8px #261173")
 						}
 						onBlur={(e) => (e.target.style.boxShadow = "none")}
 						onKeyDown={(e) => handleKeyPress(e, calculateScore)}
+						aria-required="true"
+						aria-describedby="phraseHelp"
 					/>
-					<div style={{ margin: "10px 0" }}>
-						<label
-							htmlFor="wordListSelect"
-							style={{ marginRight: "10px" }}
-						>
-							Select Word List:
+					<div>
+						<label htmlFor="wordListSelect" style={labelStyle}>
+							Dictionary:
 						</label>
 						<select
 							id="wordListSelect"
 							value={state.selectedWordList}
 							onChange={handleWordListChange}
 							style={selectStyle}
+							aria-label="Word list selector"
 						>
 							{state.wordLists.map((list) => (
 								<option key={list} value={list}>
@@ -374,27 +419,21 @@ const App = () => {
 								</option>
 							))}
 						</select>
-					</div>
-					<div style={{ marginTop: "10px" }}>
-						<label style={checkboxLabelStyle}>
+						<br />
+						<label style={labelStyle}>
 							Include offensive words
 							<input
+								style={checkboxStyle}
 								type="checkbox"
 								checked={state.includeOffensive}
 								onChange={handleOffensiveToggle}
-								style={{ marginRight: "8px" }}
+								aria-label="Include offensive words"
 							/>
 						</label>
 					</div>
 				</div>
 
-				<div
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						gap: "10px",
-					}}
-				>
+				<div style={buttonContainerStyle}>
 					<button
 						onClick={handleGoClick}
 						style={goButtonStyle}
@@ -404,6 +443,7 @@ const App = () => {
 						onMouseLeave={(e) =>
 							(e.target.style.backgroundColor = "#34eb77")
 						}
+						aria-label="Calculate phrase score"
 					>
 						Go
 					</button>
@@ -416,6 +456,7 @@ const App = () => {
 						onMouseLeave={(e) =>
 							(e.target.style.backgroundColor = "#cf4444")
 						}
+						aria-label="Reset text input and clear results"
 					>
 						Reset
 					</button>
@@ -423,7 +464,7 @@ const App = () => {
 
 				{state.isLoading && <p>Loading...</p>}
 				{!state.isLoading && state.score !== null && (
-					<div style={{ display: "flex", justifyContent: "center" }}>
+					<div style={centeredStyle}>
 						<p style={scoreBoxStyle}>
 							{state.submittedPhrase &&
 								`${state.submittedPhrase} is ${state.score}`}
@@ -440,22 +481,8 @@ const App = () => {
 				>
 					{state.generatedPhrases.length > 0 && (
 						<div style={phraseContainerStyle}>
-							<h5
-								style={{
-									color: "#fff",
-									textAlign: "center",
-									textDecorationLine: "underline",
-								}}
-							>
-								Matching phrases:
-							</h5>
-							<ul
-								style={{
-									listStyleType: "none",
-									padding: "0",
-									margin: "0",
-								}}
-							>
+							<h3 style={phraseHeadingStyle}>Matching phrases:</h3>
+							<ul style={phraseListStyle}>
 								{state.generatedPhrases.map((phrase, index) => (
 									<li
 										key={index}
