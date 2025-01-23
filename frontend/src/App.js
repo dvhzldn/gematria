@@ -36,8 +36,8 @@ const inputStyle = {
 	...commonStyles,
 	padding: "12px",
 	marginBottom: "12px",
-	border: "1px solid #000",
-	width: "95%",
+	border: "1px solid #767676",
+	width: "93%",
 	fontSize: "1.4rem",
 };
 
@@ -66,7 +66,7 @@ const buttonBaseStyle = {
 	marginTop: "10px",
 	padding: "10px",
 	fontSize: "1.5rem",
-	border: "1px solid #000000",
+	border: "0px",
 	cursor: "pointer",
 	transition: "all 0.1s ease-in-out",
 };
@@ -88,7 +88,7 @@ const scoreBoxStyle = {
 	fontWeight: "bold",
 	color: "#000",
 	backgroundColor: "rgba(13, 199, 255, 0.8)",
-	border: "1px solid #000000",
+	border: "1px solid #767676",
 	padding: "10px",
 	animation: "bounceIn 1s ease-in-out",
 };
@@ -99,7 +99,7 @@ const phraseContainerStyle = {
 	overflowY: "auto",
 	padding: "1px",
 	backgroundColor: "rgba(13, 199, 255, 0.8)",
-	border: "1px solid #000",
+	border: "1px solid #767676",
 	borderRadius: "8px",
 };
 
