@@ -51,7 +51,7 @@ const generatePhrasesStream = (
 	theme,
 	wordListFilePath
 ) => {
-	console.log("Generating phrases for score:", targetScore, "\n");
+	// console.log("Generating phrases for score:", targetScore, "\n");
 
 	res.writeHead(200, {
 		"Content-Type": "application/json",
@@ -98,7 +98,7 @@ const generatePhrasesStream = (
 		// Prevent infinite loops
 		const phrase = generateUniquePhrase();
 		if (phrase) {
-			console.log(phrase);
+			// console.log(phrase);
 			res.write(JSON.stringify({ phrase }) + "\n");
 			phraseCount++;
 		}

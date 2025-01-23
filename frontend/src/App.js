@@ -1,14 +1,120 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
+const commonStyles = {
+	fontFamily: "'Poppins', Arial, sans-serif",
+	borderRadius: "8px",
+	transition: "box-shadow 0.3s ease-in-out",
+};
+
+const containerStyle = {
+	padding: "20px",
+	maxWidth: "400px",
+	margin: "0 auto",
+};
+
+const headerStyle = {
+	textAlign: "center",
+	fontSize: "3rem",
+	fontWeight: "bold",
+	color: "#000",
+	animation: "bounce 20s infinite",
+};
+
+const inputStyle = {
+	...commonStyles,
+	padding: "8px",
+	marginBottom: "12px",
+	border: "1px solid #000",
+	width: "95%",
+};
+
+const selectStyle = {
+	padding: "5px",
+	fontFamily: "'Poppins', Arial, sans-serif",
+};
+
+const checkboxLabelStyle = {
+	fontFamily: "'Poppins', Arial, sans-serif",
+};
+
+const buttonBaseStyle = {
+	...commonStyles,
+	flex: 1,
+	padding: "10px",
+	fontSize: "1.5rem",
+	border: "1px solid #000000",
+	cursor: "pointer",
+	transition: "all 0.1s ease-in-out",
+};
+
+const goButtonStyle = {
+	...buttonBaseStyle,
+	backgroundColor: "#34eb77",
+	color: "white",
+};
+
+const resetButtonStyle = {
+	...buttonBaseStyle,
+	backgroundColor: "#cf4444",
+	color: "white",
+};
+
+const scoreBoxStyle = {
+	...commonStyles,
+	fontSize: "1.2rem",
+	fontWeight: "bolder",
+	color: "#fff",
+	backgroundColor: "rgba(52, 52, 52, 0.3)",
+	border: "1px solid #000000",
+	padding: "10px",
+	textAlign: "center",
+	animation: "bounceIn 1s ease-in-out",
+};
+
+const phraseContainerStyle = {
+	maxHeight: "50vh",
+	overflowY: "auto",
+	padding: "1px",
+	backgroundColor: "rgba(52, 52, 52, 0.3)",
+	border: "1px solid #000000",
+	borderRadius: "8px",
+};
+
+const phraseItemStyle = {
+	fontFamily: "'Poppins', Arial, sans-serif",
+	color: "#fff",
+	padding: "2px",
+	textAlign: "center",
+	marginBottom: "2px",
+	fontWeight: "lighter",
+	fontSize: "0.9rem",
+	animation: "fadeIn 0.1s ease-in-out",
+};
+
+const keyframesStyle = `
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-20px); }
+    60% { transform: translateY(-10px); }
+  }
+
+  @keyframes bounceIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+`;
+
 const App = () => {
-	const [phrase, setPhrase] = useState("");
-	const [score, setScore] = useState(null);
-	const [generatedPhrases, setGeneratedPhrases] = useState([]);
-	const [isLoading, setIsLoading] = useState(false);
-	const [submittedPhrase, setSubmittedPhrase] = useState("");
-	const [includeOffensive, setIncludeOffensive] = useState(true);
-	const [wordLists, setWordLists] = useState([]);
-	const [selectedWordList, setSelectedWordList] = useState("oxford_3000");
+	const [state, setState] = useState({
+		phrase: "",
+		score: null,
+		generatedPhrases: [],
+		isLoading: false,
+		submittedPhrase: "",
+		includeOffensive: true,
+		wordLists: [],
+		selectedWordList: "oxford_3000",
+	});
 
 	const apiUrl = process.env.REACT_APP_API_URL;
 	const hasFetched = useRef(false);
@@ -19,19 +125,25 @@ const App = () => {
 				try {
 					const cachedData = localStorage.getItem("wordLists");
 					if (cachedData) {
-						setWordLists(JSON.parse(cachedData));
+						setState((prevState) => ({
+							...prevState,
+							wordLists: JSON.parse(cachedData),
+						}));
 						return;
 					}
-					console.log("Fetching word lists...");
+					//					console.log("Fetching word lists...");
 					const response = await fetch(`${apiUrl}/word-lists`);
 					if (!response.ok) {
 						throw new Error(`HTTP error! Status: ${response.status}`);
 					}
 					const data = await response.json();
-					console.log("Received word lists:", data);
+					//					console.log("Received word lists:", data);
 
-					setWordLists(data.wordLists);
-					setSelectedWordList("oxford_3000");
+					setState((prevState) => ({
+						...prevState,
+						wordLists: data.wordLists,
+						selectedWordList: "oxford_3000",
+					}));
 					localStorage.setItem(
 						"wordLists",
 						JSON.stringify(data.wordLists)
@@ -42,21 +154,26 @@ const App = () => {
 			};
 
 			fetchWordLists();
-
 			hasFetched.current = true;
 		}
 	}, [apiUrl]);
 
 	const calculateScore = useCallback(async () => {
-		if (!phrase.trim()) {
+		if (!state.phrase.trim()) {
 			showAlert("Enter some text");
 			return null;
 		}
-		setGeneratedPhrases([]);
-		setScore(null);
-		setIsLoading(true);
+		setState((prevState) => ({
+			...prevState,
+			generatedPhrases: [],
+			score: null,
+			isLoading: true,
+		}));
 
-		console.log("Sending request to calculate score for phrase:", phrase);
+		// console.log(
+		// 	"Sending request to calculate score for phrase:",
+		// 	state.phrase
+		// );
 
 		try {
 			const response = await fetch(`${apiUrl}/calculate`, {
@@ -64,7 +181,7 @@ const App = () => {
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ phrase }),
+				body: JSON.stringify({ phrase: state.phrase }),
 			});
 
 			if (!response.ok) {
@@ -72,40 +189,43 @@ const App = () => {
 			}
 
 			const data = await response.json();
-			console.log("Response data from calculate:", data);
+			// console.log("Response data from calculate:", data);
 
-			setScore(data.score);
-			setSubmittedPhrase(phrase);
+			setState((prevState) => ({
+				...prevState,
+				score: data.score,
+				submittedPhrase: state.phrase,
+			}));
 			return data.score;
 		} catch (error) {
 			console.error("Error calculating score:", error);
 			return null;
 		} finally {
-			setIsLoading(false);
+			setState((prevState) => ({ ...prevState, isLoading: false }));
 		}
-	}, [apiUrl, phrase]);
+	}, [apiUrl, state.phrase]);
 
 	const generatePhrases = useCallback(
 		async (score) => {
-			console.log("Starting to generate phrases with score:", score);
+			// console.log("Starting to generate phrases with score:", score);
 
 			if (!score || isNaN(score)) {
 				showAlert("Invalid score. Please calculate a valid score first.");
-				console.log("Invalid score, exiting.");
+				// console.log("Invalid score, exiting.");
 				return;
 			}
 
-			if (!selectedWordList) {
+			if (!state.selectedWordList) {
 				showAlert("Select a valid word list.");
-				console.log("No word list selected, exiting.");
+				// console.log("No word list selected, exiting.");
 				return;
 			}
 
-			console.log("Sending request to generate phrases with parameters:", {
-				score,
-				theme: includeOffensive ? "offensive" : null,
-				wordList: selectedWordList,
-			});
+			// console.log("Sending request to generate phrases with parameters:", {
+			// 	score,
+			// 	theme: state.includeOffensive ? "offensive" : null,
+			// 	wordList: state.selectedWordList,
+			// });
 
 			try {
 				const response = await fetch(`${apiUrl}/generate-stream`, {
@@ -115,8 +235,8 @@ const App = () => {
 					},
 					body: JSON.stringify({
 						score,
-						theme: includeOffensive ? "offensive" : null,
-						wordList: selectedWordList,
+						theme: state.includeOffensive ? "offensive" : null,
+						wordList: state.selectedWordList,
 					}),
 				});
 
@@ -145,11 +265,14 @@ const App = () => {
 								.split(" ")
 								.filter((word) => word.length > 1)
 								.join(" ");
-							setGeneratedPhrases((prevPhrases) => [
-								...prevPhrases,
-								filteredPhrase,
-							]);
-							console.log(filteredPhrase);
+							setState((prevState) => ({
+								...prevState,
+								generatedPhrases: [
+									...prevState.generatedPhrases,
+									filteredPhrase,
+								],
+							}));
+							// console.log(filteredPhrase);
 						} catch (error) {
 							console.error("Error parsing JSON:", error);
 						}
@@ -159,33 +282,41 @@ const App = () => {
 				console.error("Error generating phrases:", error);
 			}
 		},
-		[apiUrl, includeOffensive, selectedWordList]
+		[apiUrl, state.includeOffensive, state.selectedWordList]
 	);
 
 	const handleGoClick = async () => {
-		console.log("Go button clicked");
+		// console.log("Go button clicked");
 		const score = await calculateScore();
 		if (score) {
-			console.log("Conditions met, calling generatePhrases...");
+			// console.log("Conditions met, calling generatePhrases...");
 			await generatePhrases(score);
 		} else {
-			console.log("Conditions not met, skipping generatePhrases.");
+			// console.log("Conditions not met, skipping generatePhrases.");
 		}
 	};
 
 	const handleReset = () => {
-		setPhrase("");
-		setScore(null);
-		setGeneratedPhrases([]);
-		setSubmittedPhrase("");
+		setState({
+			phrase: "",
+			score: null,
+			generatedPhrases: [],
+			submittedPhrase: "",
+		});
 	};
 
 	const handleWordListChange = (e) => {
-		setSelectedWordList(e.target.value);
+		setState((prevState) => ({
+			...prevState,
+			selectedWordList: e.target.value,
+		}));
 	};
 
 	const handleOffensiveToggle = () => {
-		setIncludeOffensive((prev) => !prev);
+		setState((prevState) => ({
+			...prevState,
+			includeOffensive: !prevState.includeOffensive,
+		}));
 	};
 
 	const handleKeyPress = (event, buttonClickHandler) => {
@@ -221,54 +352,25 @@ const App = () => {
 	};
 
 	return (
-		<main
-			style={{
-				padding: "20px",
-				fontFamily: "'Poppins', Arial, sans-serif",
-				maxWidth: "400px",
-				margin: "0 auto",
-			}}
-		>
-			<h1
-				style={{
-					textAlign: "center",
-					fontSize: "3rem",
-					fontWeight: "bold",
-					color: "#000",
-					animation: "bounce 20s infinite",
-				}}
-			>
-				Unreal Tom Numbers
-			</h1>
+		<main style={containerStyle}>
+			<h1 style={headerStyle}>Unreal Tom Numbers</h1>
 
-			<style>
-				{`
-    @keyframes bounce {
-      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-      40% { transform: translateY(-20px); }
-      60% { transform: translateY(-10px); }
-    }
-  `}
-			</style>
+			<style>{keyframesStyle}</style>
 
 			<section>
 				<div>
 					<input
 						id="phrase"
 						type="text"
-						value={phrase}
-						onChange={(e) => setPhrase(e.target.value)}
+						value={state.phrase}
+						onChange={(e) =>
+							setState((prevState) => ({
+								...prevState,
+								phrase: e.target.value,
+							}))
+						}
 						placeholder="Enter a word or phrase to be calculated"
-						style={{
-							fontFamily: "'Poppins', Arial, sans-serif",
-							width: "95%",
-							padding: "8px",
-							marginBottom: "12px",
-							borderRadius: "8px",
-							border: "1px solid #000",
-							boxShadow: "none",
-							transition: "box-shadow 0.3s ease-in-out",
-						}}
+						style={inputStyle}
 						onFocus={(e) =>
 							(e.target.style.boxShadow = "0 0 8px #261173")
 						}
@@ -284,14 +386,11 @@ const App = () => {
 						</label>
 						<select
 							id="wordListSelect"
-							value={selectedWordList}
+							value={state.selectedWordList}
 							onChange={handleWordListChange}
-							style={{
-								padding: "5px",
-								fontFamily: "'Poppins', Arial, sans-serif",
-							}}
+							style={selectStyle}
 						>
-							{wordLists.map((list) => (
+							{state.wordLists.map((list) => (
 								<option key={list} value={list}>
 									{list}
 								</option>
@@ -299,17 +398,18 @@ const App = () => {
 						</select>
 					</div>
 					<div style={{ marginTop: "10px" }}>
-						<label style={{ fontFamily: "'Poppins', Arial, sans-serif" }}>
+						<label style={checkboxLabelStyle}>
 							Include offensive words
 							<input
 								type="checkbox"
-								checked={includeOffensive}
+								checked={state.includeOffensive}
 								onChange={handleOffensiveToggle}
 								style={{ marginRight: "8px" }}
 							/>
 						</label>
 					</div>
 				</div>
+
 				<div
 					style={{
 						display: "flex",
@@ -319,18 +419,7 @@ const App = () => {
 				>
 					<button
 						onClick={handleGoClick}
-						style={{
-							fontFamily: "'Poppins', Arial, sans-serif",
-							flex: 1,
-							padding: "10px",
-							backgroundColor: "#34eb77",
-							color: "white",
-							border: "1px solid #000000",
-							borderRadius: "8px",
-							cursor: "pointer",
-							fontSize: "1.5rem",
-							transition: "all 0.1s ease-in-out",
-						}}
+						style={goButtonStyle}
 						onMouseEnter={(e) =>
 							(e.target.style.backgroundColor = "#05f75e")
 						}
@@ -342,18 +431,7 @@ const App = () => {
 					</button>
 					<button
 						onClick={handleReset}
-						style={{
-							fontFamily: "'Poppins', Arial, sans-serif",
-							flex: 1,
-							padding: "10px",
-							backgroundColor: "#cf4444",
-							color: "white",
-							border: "1px solid #000000",
-							borderRadius: "8px",
-							cursor: "pointer",
-							fontSize: "1.5rem",
-							transition: "all 0.1s ease-in-out",
-						}}
+						style={resetButtonStyle}
 						onMouseEnter={(e) =>
 							(e.target.style.backgroundColor = "#000")
 						}
@@ -364,29 +442,13 @@ const App = () => {
 						Reset
 					</button>
 				</div>
-				{isLoading && <p></p>}
-				{!isLoading && score !== null && (
-					<div
-						style={{
-							display: "flex",
-							justifyContent: "center",
-						}}
-					>
-						<p
-							style={{
-								fontFamily: "'Poppins', Arial, sans-serif",
-								fontSize: "1.2rem",
-								fontWeight: "bolder",
-								color: "#fff",
-								backgroundColor: "rgba(52, 52, 52, 0.3)",
-								border: "1px solid #000000",
-								padding: "10px",
-								borderRadius: "8px",
-								textAlign: "center",
-								animation: "bounceIn 1s ease-in-out",
-							}}
-						>
-							{submittedPhrase && `${submittedPhrase} is ${score}`}
+
+				{state.isLoading && <p>Loading...</p>}
+				{!state.isLoading && state.score !== null && (
+					<div style={{ display: "flex", justifyContent: "center" }}>
+						<p style={scoreBoxStyle}>
+							{state.submittedPhrase &&
+								`${state.submittedPhrase} is ${state.score}`}
 						</p>
 					</div>
 				)}
@@ -398,27 +460,13 @@ const App = () => {
 					tabIndex="-1"
 					style={{ marginTop: "0px" }}
 				>
-					{generatedPhrases.length > 0 && (
-						<div
-							style={{
-								maxHeight: "50vh",
-								overflowY: "auto",
-								padding: "1px",
-								backgroundColor: "rgba(52, 52, 52, 0.3)",
-								border: "1px solid #000000",
-								borderRadius: "8px",
-								marginLeft: "0px",
-								marginRight: "0px",
-							}}
-						>
+					{state.generatedPhrases.length > 0 && (
+						<div style={phraseContainerStyle}>
 							<h5
 								style={{
 									color: "#fff",
 									textAlign: "center",
-									textDecorationLine: "Underline",
-									padding: "0",
-									marginBottom: "0",
-									marginTop: "2px",
+									textDecorationLine: "underline",
 								}}
 							>
 								Matching phrases:
@@ -430,20 +478,12 @@ const App = () => {
 									margin: "0",
 								}}
 							>
-								{generatedPhrases.map((phrase, index) => (
+								{state.generatedPhrases.map((phrase, index) => (
 									<li
 										key={index}
 										style={{
-											fontFamily: "'Poppins', Arial, sans-serif",
-											color: "#fff",
-											padding: "2px",
-											textAlign: "center",
-											marginBottom: "2px",
-											fontWeight: "lighter",
-											fontSize: "0.9rem",
-											animation: "fadeIn 0.1s ease-in-out",
+											...phraseItemStyle,
 											animationDelay: `${index * 0.05}s`,
-											animationFillMode: "both",
 										}}
 									>
 										{phrase}
