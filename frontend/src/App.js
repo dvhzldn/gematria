@@ -114,7 +114,7 @@ const App = () => {
 						const phrase = JSON.parse(line).phrase;
 						const filteredPhrase = phrase
 							.split(" ")
-							.filter((word) => word.length > 2)
+							.filter((word) => word.length > 0)
 							.join(" ");
 						setGeneratedPhrases((prevPhrases) => [
 							...prevPhrases,
@@ -166,7 +166,27 @@ const App = () => {
 				margin: "0 auto",
 			}}
 		>
-			<h1 style={{ textAlign: "center" }}>Unreal Numbers</h1>
+			<h1
+				style={{
+					textAlign: "center",
+					fontSize: "3rem",
+					fontWeight: "bold",
+					color: "#cf4444",
+					animation: "bounce 20s infinite",
+				}}
+			>
+				Tom Unreal Numbers
+			</h1>
+
+			<style>
+				{`
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-20px); }
+      60% { transform: translateY(-10px); }
+    }
+  `}
+			</style>
 
 			<section>
 				<div>
@@ -175,7 +195,7 @@ const App = () => {
 						type="text"
 						value={phrase}
 						onChange={(e) => setPhrase(e.target.value)}
-						placeholder="Enter a phrase to be calculated"
+						placeholder="Enter a word or phrase to be calculated"
 						style={{
 							fontFamily: "'Poppins', Arial, sans-serif",
 							width: "95%",
@@ -288,6 +308,8 @@ const App = () => {
 								backgroundColor: "rgba(52, 52, 52, 0.3)",
 								border: "1px solid #000000",
 								borderRadius: "8px",
+								marginLeft: "0px",
+								marginRight: "0px",
 							}}
 						>
 							<h5

@@ -48,7 +48,7 @@ const calculateGematria = (word) => {
 
 // Generate phrases with theme prioritization
 const generatePhrasesStream = (targetScore, maxWords, res, theme) => {
-	console.log("Generating phrases for score:", targetScore);
+	console.log("Generating phrases for score:", targetScore, "\n");
 
 	res.writeHead(200, {
 		"Content-Type": "application/json",
@@ -89,7 +89,7 @@ const generatePhrasesStream = (targetScore, maxWords, res, theme) => {
 	while (phraseCount < maxPhrases && wordPool.length > 0) {
 		const phrase = generateUniquePhrase();
 		if (phrase) {
-			console.log(phrase);
+			console.log(phrase, "\n");
 			res.write(JSON.stringify({ phrase }) + "\n");
 			phraseCount++;
 		} else {
@@ -108,7 +108,7 @@ app.post("/generate-stream", (req, res) => {
 	}
 
 	const selectedTheme = theme && themeDictionaries[theme] ? theme : null;
-	generatePhrasesStream(Number(score), 5, res, selectedTheme);
+	generatePhrasesStream(Number(score), 6, res, selectedTheme);
 });
 
 // Endpoint to calculate score
@@ -121,5 +121,5 @@ app.post("/calculate", (req, res) => {
 });
 
 app.listen(PORT, () => {
-	console.log(`Server running on http://localhost:${PORT}`);
+	console.log(`\nServer running on http://localhost:${PORT}\n`);
 });
