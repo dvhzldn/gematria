@@ -85,7 +85,6 @@ const resetButtonStyle = {
 const scoreBoxStyle = {
 	...commonStyles,
 	fontSize: "1.2rem",
-	fontWeight: "bold",
 	color: "#000",
 	backgroundColor: "rgba(13, 199, 255, 0.8)",
 	border: "1px solid #767676",
@@ -466,8 +465,12 @@ const App = () => {
 				{!state.isLoading && state.score !== null && (
 					<div style={centeredStyle}>
 						<p style={scoreBoxStyle}>
-							{state.submittedPhrase &&
-								`${state.submittedPhrase} is ${state.score}`}
+							{state.submittedPhrase && (
+								<>
+									{state.submittedPhrase} is{" "}
+									<strong>{state.score}</strong>
+								</>
+							)}
 						</p>
 					</div>
 				)}
