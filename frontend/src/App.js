@@ -153,7 +153,7 @@ const App = () => {
 		selectedWordList: "oxford_3000",
 	});
 
-	const apiUrl = process.env.REACT_APP_API_URL;
+	const apiUrl = "";
 	const hasFetched = useRef(false);
 
 	useEffect(() => {
@@ -168,7 +168,7 @@ const App = () => {
 						}));
 						return;
 					}
-					const response = await fetch(`${apiUrl}/word-lists`);
+					const response = await fetch(`/api/word-lists`);
 					if (!response.ok) {
 						throw new Error(`HTTP error! Status: ${response.status}`);
 					}
@@ -205,7 +205,7 @@ const App = () => {
 		}));
 
 		try {
-			const response = await fetch(`${apiUrl}/calculate`, {
+			const response = await fetch(`/api/calculate`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -245,7 +245,7 @@ const App = () => {
 			}
 
 			try {
-				const response = await fetch(`${apiUrl}/generate-stream`, {
+				const response = await fetch(`/api/generate-stream`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
