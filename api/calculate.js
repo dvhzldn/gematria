@@ -1,4 +1,4 @@
-import { calculateGematria } from "../utils";
+import { calculateGematria } from "./utils";
 
 export default function handler(req, res) {
 	if (req.method === "POST") {
