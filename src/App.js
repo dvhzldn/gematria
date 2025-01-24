@@ -95,7 +95,7 @@ const scoreBoxStyle = {
 
 const phraseContainerStyle = {
 	...commonStyles,
-	maxHeight: "50vh",
+	maxHeight: "40vh",
 	overflowY: "auto",
 	padding: "1px",
 	backgroundColor: "rgba(13, 199, 255, 0.8)",
