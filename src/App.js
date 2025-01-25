@@ -1,17 +1,20 @@
-import { Routes, Route } from "react-router-dom";
-import AppMenu from "./components/Menu";
-import PhraseGenerator from "./pages/PhraseGenerator"; // Create this file
-import WhatIsGematria from "./pages/WhatIsGematria"; // Placeholder for now
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Layout from "./components/Layout";
+import PhraseGenerator from "./pages/PhraseGenerator";
+import ScoreCalculator from "./pages/ScoreCalculator";
+import WhatIsGematria from "./pages/WhatIsGematria";
 
 function App() {
 	return (
-		<div>
-			<AppMenu />
-			<Routes>
-				<Route path="/" element={<PhraseGenerator />} />
-				<Route path="/what-is-gematria" element={<WhatIsGematria />} />
-			</Routes>
-		</div>
+		<BrowserRouter>
+			<Layout>
+				<Routes>
+					<Route path="/" element={<PhraseGenerator />} />
+					<Route path="/score-calculator" element={<ScoreCalculator />} />
+					<Route path="/what-is-gematria" element={<WhatIsGematria />} />
+				</Routes>
+			</Layout>
+		</BrowserRouter>
 	);
 }
 

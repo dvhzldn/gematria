@@ -13,7 +13,7 @@ body {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	margin: 0;
-	padding: 0;
+	padding: 20px;
 	background: linear-gradient(
 		to bottom,
 		rgba(255, 255, 255, 0.8),
@@ -22,8 +22,8 @@ body {
 	height: 100vh;
 	width: 100vw;
 	overflow: hidden;
-	font-family: var(--font-family);
 	box-sizing: border-box;
+	background-color: #f0f4f8;
 }
 
 code {
@@ -31,6 +31,7 @@ code {
 		monospace;
 }
 
+/* Animations */
 @keyframes bounceIn {
 	0% {
 		transform: scale(0.8);

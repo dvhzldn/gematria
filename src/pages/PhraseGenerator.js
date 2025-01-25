@@ -1,4 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import PhraseInput from "../components/PhraseInput";
+import DisplayScore from "../components/DisplayScore";
+import PhraseList from "../components/PhraseList";
+import ActionButtons from "../components/ActionButtons";
+import WordListSelector from "../components/WordListSelector";
+import LoadingSpinner from "../components/LoadingSpinner";
+import AlertBox from "../components/AlertBox";
 
 const PhraseGenerator = () => {
 	const [state, setState] = useState({
@@ -11,8 +18,7 @@ const PhraseGenerator = () => {
 		wordLists: [],
 		selectedWordList: "oxford_3000",
 	});
-
-	const apiUrl = "";
+	const [alertMessage, setAlertMessage] = useState("");
 	const hasFetched = useRef(false);
 
 	useEffect(() => {
@@ -49,11 +55,11 @@ const PhraseGenerator = () => {
 			fetchWordLists();
 			hasFetched.current = true;
 		}
-	}, [apiUrl]);
+	}, []);
 
 	const calculateScore = useCallback(async () => {
 		if (!state.phrase.trim()) {
-			showAlert("Enter some text");
+			setAlertMessage("Enter some text");
 			return null;
 		}
 		setState((prevState) => ({
@@ -89,17 +95,19 @@ const PhraseGenerator = () => {
 		} finally {
 			setState((prevState) => ({ ...prevState, isLoading: false }));
 		}
-	}, [apiUrl, state.phrase]);
+	}, [state.phrase]);
 
 	const generatePhrases = useCallback(
 		async (score) => {
 			if (!score || isNaN(score)) {
-				showAlert("Invalid score. Please calculate a valid score first.");
+				setAlertMessage(
+					"Invalid score. Please calculate a valid score first."
+				);
 				return;
 			}
 
 			if (!state.selectedWordList) {
-				showAlert("Select a valid word list.");
+				setAlertMessage("Select a valid word list.");
 				return;
 			}
 
@@ -157,7 +165,7 @@ const PhraseGenerator = () => {
 				console.error("Error generating phrases:", error);
 			}
 		},
-		[apiUrl, state.includeOffensive, state.selectedWordList]
+		[state.includeOffensive, state.selectedWordList]
 	);
 
 	const handleGoClick = async () => {
@@ -179,188 +187,47 @@ const PhraseGenerator = () => {
 		}));
 	};
 
-	const handleWordListChange = (e) => {
-		setState((prevState) => ({
-			...prevState,
-			selectedWordList: e.target.value,
-		}));
-	};
-
-	const handleOffensiveToggle = () => {
-		setState((prevState) => ({
-			...prevState,
-			includeOffensive: !prevState.includeOffensive,
-		}));
-	};
-
-	const handleKeyPress = (event, buttonClickHandler) => {
-		if (event.key === "Enter") {
-			event.preventDefault();
-			buttonClickHandler();
-		}
-	};
-
-	const showAlert = (message) => {
-		const alertBox = document.createElement("div");
-		alertBox.textContent = message;
-		alertBox.style.position = "fixed";
-		alertBox.style.top = "300px";
-		alertBox.style.left = "50%";
-		alertBox.style.transform = "translateX(-50%)";
-		alertBox.style.backgroundColor = "#000";
-		alertBox.style.color = "#fff";
-		alertBox.style.padding = "10px 20px";
-		alertBox.style.borderRadius = "8px";
-		alertBox.style.textAlign = "center";
-		alertBox.style.fontSize = "3rem";
-		alertBox.style.fontFamily = "'Poppins', Arial, sans-serif";
-		alertBox.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
-		alertBox.style.zIndex = 1000;
-		alertBox.style.animation = "fadeOut 2s forwards";
-
-		document.body.appendChild(alertBox);
-
-		setTimeout(() => {
-			document.body.removeChild(alertBox);
-		}, 2000);
-	};
-
 	return (
-		<main className="container">
-			<h1 className="header">Simple Gematria</h1>
-			<h1 className="header">Phrase Generator</h1>
-
-			<section>
-				<div>
-					<label htmlFor="phrase" className="label">
-						Phrase:
-					</label>
-					<p id="phraseHelp" className="phrase-help">
-						Enter a word or phrase to calculate its score and generate
-						phrases with a matching score. This field is required.
-					</p>
-					<input
-						id="phrase"
-						type="text"
-						value={state.phrase}
-						onChange={(e) =>
-							setState((prevState) => ({
-								...prevState,
-								phrase: e.target.value,
-							}))
-						}
-						placeholder="Enter a word or phrase"
-						className="input"
-						onFocus={(e) =>
-							(e.target.style.boxShadow = "0 0 8px #261173")
-						}
-						onBlur={(e) => (e.target.style.boxShadow = "none")}
-						onKeyDown={(e) => handleKeyPress(e, calculateScore)}
-						aria-required="true"
-						aria-describedby="phraseHelp"
-					/>
-					<div>
-						<label htmlFor="wordListSelect" className="label">
-							Dictionary:
-						</label>
-						<select
-							id="wordListSelect"
-							value={state.selectedWordList}
-							onChange={handleWordListChange}
-							className="select"
-							aria-label="Word list selector"
-						>
-							{state.wordLists.map((list) => (
-								<option key={list} value={list}>
-									{list}
-								</option>
-							))}
-						</select>
-						<br />
-						<label className="label">
-							Include offensive words
-							<input
-								className="checkbox"
-								type="checkbox"
-								checked={state.includeOffensive}
-								onChange={handleOffensiveToggle}
-								aria-label="Include offensive words"
-							/>
-						</label>
-					</div>
-				</div>
-
-				<div className="button-container">
-					<button
-						onClick={handleGoClick}
-						className="button button-go"
-						onMouseEnter={(e) =>
-							(e.target.style.backgroundColor = "#05f75e")
-						}
-						onMouseLeave={(e) =>
-							(e.target.style.backgroundColor = "#34eb77")
-						}
-						aria-label="Calculate phrase score"
-					>
-						Go
-					</button>
-					<button
-						onClick={handleReset}
-						className="button button-reset"
-						onMouseEnter={(e) =>
-							(e.target.style.backgroundColor = "#000")
-						}
-						onMouseLeave={(e) =>
-							(e.target.style.backgroundColor = "#cf4444")
-						}
-						aria-label="Reset text input and clear results"
-					>
-						Reset
-					</button>
-				</div>
-
-				{state.isLoading && <p>Loading...</p>}
-				{!state.isLoading && state.score !== null && (
-					<div className="centered">
-						<p className="score-box">
-							{state.submittedPhrase && (
-								<>
-									{state.submittedPhrase} is{" "}
-									<strong>{state.score}</strong>
-								</>
-							)}
-						</p>
-					</div>
-				)}
-			</section>
-
-			<section>
-				<div
-					id="generatedPhrases"
-					tabIndex="-1"
-					style={{ marginTop: "0px" }}
-				>
-					{state.generatedPhrases.length > 0 && (
-						<div className="phrase-container">
-							<h3 className="phrase-heading">Matching phrases:</h3>
-							<ul className="phrase-list">
-								{state.generatedPhrases.map((phrase, index) => (
-									<li
-										key={index}
-										className="phrase-item"
-										style={{
-											animationDelay: `${index * 0.05}s`,
-										}}
-									>
-										{phrase}
-									</li>
-								))}
-							</ul>
-						</div>
-					)}
-				</div>
-			</section>
-		</main>
+		<div className={alertMessage ? "no-pointer-events" : ""}>
+			<PhraseInput
+				phrase={state.phrase}
+				setPhrase={(phrase) =>
+					setState((prevState) => ({ ...prevState, phrase }))
+				}
+				handleKeyPress={(event) => {
+					if (event.key === "Enter") handleGoClick();
+				}}
+				calculateScore={calculateScore}
+			/>
+			<WordListSelector
+				wordLists={state.wordLists}
+				selectedWordList={state.selectedWordList}
+				handleWordListChange={(e) =>
+					setState((prevState) => ({
+						...prevState,
+						selectedWordList: e.target.value,
+					}))
+				}
+				includeOffensive={state.includeOffensive}
+				handleOffensiveToggle={() =>
+					setState((prevState) => ({
+						...prevState,
+						includeOffensive: !prevState.includeOffensive,
+					}))
+				}
+			/>
+			<ActionButtons
+				handleGenerate={handleGoClick}
+				handleReset={handleReset}
+			/>
+			<LoadingSpinner isLoading={state.isLoading} />
+			<AlertBox message={alertMessage} onClose={() => setAlertMessage("")} />
+			<DisplayScore
+				submittedPhrase={state.submittedPhrase}
+				score={state.score}
+			/>
+			<PhraseList generatedPhrases={state.generatedPhrases} />
+		</div>
 	);
 };
 
