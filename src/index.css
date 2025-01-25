@@ -1,3 +1,16 @@
+html,
+body {
+	height: 100vh;
+	margin: 0;
+	overflow-x: hidden;
+}
+
+.main-content {
+	min-height: 100%;
+	padding-bottom: 10px;
+	overflow-y: auto;
+}
+
 :root {
 	--font-family: "Poppins", Arial, sans-serif;
 	--border-radius: 8px;
@@ -12,14 +25,12 @@ body {
 	font-family: var(--font-family);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
-	margin: 0;
 	padding: 20px;
 	background: linear-gradient(
 		to bottom,
 		rgba(255, 255, 255, 0.8),
 		rgba(13, 199, 255, 0.8)
 	);
-	height: 100vh;
 	width: 100vw;
 	overflow: hidden;
 	box-sizing: border-box;
