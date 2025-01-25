@@ -3,9 +3,9 @@
 	--border-radius: 8px;
 	--primary-color: #34eb77;
 	--secondary-color: #cf4444;
-	--text-color: #000;
+	--text-color: #1e1e1e;
 	--background-light: rgba(13, 199, 255, 0.8);
-	--border-color: #767676;
+	--border-color: #f0f0f0;
 }
 
 body {
@@ -23,7 +23,7 @@ body {
 	width: 100vw;
 	overflow: hidden;
 	box-sizing: border-box;
-	background-color: #f0f4f8;
+	background-color: #f0f0f0;
 }
 
 code {
